@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Core Search Flow:
 
-## Getting Started
+Question Analysis: Take a user question and use an LLM to break it down into a reasoning step
+Query Decomposition: Extract key search terms and determine what type of information is needed
+Iterative Search: Perform searches and evaluate if additional context is required
+Context Synthesis: Combine results and determine if the question can be answered or if more searching is needed
+Suggested Tools (feel free to modify or add others):
 
-First, run the development server:
+generate_file_structure() → Returns the codebase file structure as a text string
+read_file(file_path) → Returns the complete content of a specified file
+search_by_keyword(keywords) → Searches codebase for specific terms
+search_by_file(file_pattern) → Finds files matching a pattern
+search_semantic(query) → Semantic search across codebase
+get_git_history(file_path) → Recent changes to understand context
+clone_github_repository(repository, branch?) → Clones a GitHub repo into `external-repos/` so every local-only tool can inspect it
+Expected Behavior:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Stream the reasoning process back to the user interface (like Cursor's AI chat)
+Make intelligent decisions about when to stop searching vs. continue
+Handle multi-turn search scenarios where initial results inform follow-up queries
+Maintain conversation context and codebase understanding across interactions
+
+Tip: Ensure the host has `git` installed; `clone_github_repository` uses it to place clones under `external-repos/<owner>__<repo>`, after which the usual `read_file`, `search_*`, etc. tools can operate on that path. Set `GITHUB_TOKEN` if you need to clone private repositories or want higher GitHub rate limits.
+
+## Backend API
+
+`POST /api`
+
+```jsonc
+{
+  "question": "What tools does this agent have?",
+  "temperature": 0.2,
+  "maxTokens": 1200
+  // OR provide a messages array matching the OpenAI CoreMessage shape:
+  // "messages": [
+  //   { "role": "user", "content": "Summarize this repository" }
+  // ]
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Response:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```json
+{
+  "answer": "…final model text…",
+  "finishReason": "stop",
+  "usage": { "promptTokens": 123, "completionTokens": 456, "totalTokens": 579 },
+  "toolCalls": [],
+  "steps": [],
+  "rawResponse": { "messages": [/* model + tool traces */] }
+}
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> Note: The React client shipped in this repo still uses the streaming `useChat` hook and is no longer wired to this endpoint. Exercise the API directly (e.g. curl/Postman) or update the UI to consume the JSON response.
