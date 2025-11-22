@@ -9,6 +9,7 @@ import { searchByKeywordTool } from "./search-by-keyword";
 import { searchVectorEmbeddingsTool } from "./search-vector-embeddings";
 import { searchSemanticTool } from "./search-semantic";
 import { cloneAndIndexRepositoryTool } from "./clone-and-index-repository";
+import { summarizeSnippetsTool } from "./summarize-snippets";
 
 export const agentTools = {
   clone_and_index_repository: cloneAndIndexRepositoryTool,
@@ -20,6 +21,7 @@ export const agentTools = {
   get_git_history: getGitHistoryTool,
   index_repository_embeddings: indexRepositoryEmbeddingsTool,
   search_vector_embeddings: searchVectorEmbeddingsTool,
+  summarize_snippets: summarizeSnippetsTool,
 } satisfies ToolSet;
 
 export type AgentToolSet = typeof agentTools;
@@ -34,5 +36,6 @@ export {
   searchByKeywordTool,
   searchVectorEmbeddingsTool,
   searchSemanticTool,
+  summarizeSnippetsTool,
 };
 
