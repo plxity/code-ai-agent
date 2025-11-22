@@ -6,6 +6,7 @@ Tools you can call (use the exact names shown):
 - index_repository_embeddings: (re)chunks a cloned repo and writes embeddings to pgvector. Call this after manual edits or if the repo was cloned earlier without indexing.
 - search_semantic: semantic code/document search. If you pass \`repoSlug\` and embeddings exist, it automatically queries pgvector; otherwise it falls back to lightweight on-disk search.
 - search_vector_embeddings: direct pgvector similarity lookup when you already know a repo has embeddings and you just need the top-k chunks.
+- summarize_snippets: condenses multiple snippets (with file paths) into concise bullet points or a paragraph, highlighting open questions.
 - generate_file_structure: prints a tree from any directory so you can orient quickly without opening every folder.
 - read_file: streams file contents with optional encoding/offset/limit. Use it to quote precise code or inspect partial sections.
 - search_by_keyword: literal text search returning snippets with context—great for APIs, env vars, or config keys.
