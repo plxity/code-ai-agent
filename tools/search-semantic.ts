@@ -1,4 +1,6 @@
+import { createOpenAI } from "@ai-sdk/openai";
 import { tool } from "@ai-sdk/provider-utils";
+import { embed } from "ai";
 import { z } from "zod";
 
 import {
@@ -8,6 +10,17 @@ import {
   tokenize,
   walkWorkspaceFiles,
 } from "./utils";
+import {
+  DEFAULT_EMBEDDING_MODEL,
+  isVectorStoreConfigured,
+  vectorSimilaritySearch,
+} from "@/lib/vector-store";
+
+const openai =
+  process.env.OPENAI_API_KEY &&
+  createOpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
 
 const DEFAULT_MAX_SNIPPET = 600;
 
@@ -16,6 +29,13 @@ export const searchSemanticTool = tool({
     "Performs a lightweight semantic search by scoring files against the query tokens.",
   inputSchema: z.object({
     query: z.string().min(2).describe("Question or concept to search for."),
+    repoSlug: z
+      .string()
+      .min(3)
+      .optional()
+      .describe(
+        "When provided and pgvector is configured, semantic results are fetched from the pre-indexed embeddings for this repo slug (owner/name).",
+      ),
     searchRoot: z
       .string()
       .optional()
@@ -36,6 +56,7 @@ export const searchSemanticTool = tool({
       .describe("Maximum characters to include per snippet."),
   }),
   execute: async ({
+    repoSlug,
     query,
     searchRoot = ".",
     maxResults = 5,
@@ -44,6 +65,57 @@ export const searchSemanticTool = tool({
     const tokens = Array.from(new Set(tokenize(query)));
     if (tokens.length === 0) {
       throw new Error("Provide a more descriptive query.");
+    }
+
+    const canUseVectorSearch =
+      repoSlug &&
+      isVectorStoreConfigured() &&
+      openai &&
+      process.env.OPENAI_API_KEY;
+
+    if (canUseVectorSearch) {
+      console.log(
+        "[search_semantic] using vector store",
+        JSON.stringify({ repoSlug, query, maxResults }, null, 2),
+      );
+      const embeddingModel = DEFAULT_EMBEDDING_MODEL;
+      const { embedding } = await embed({
+        model: openai.embedding(embeddingModel),
+        value: query,
+      });
+
+      const rows = await vectorSimilaritySearch({
+        repoSlug: repoSlug!,
+        embedding,
+        limit: maxResults,
+      });
+
+      const vectorResults = rows.map((row) => ({
+        file: row.filePath,
+        score:
+          typeof row.score === "number"
+            ? Number(row.score.toFixed(4))
+            : null,
+        snippet: row.content,
+        line: null as number | null,
+        truncated: false,
+        branch: row.branch ?? undefined,
+        commitSha: row.commitSha ?? undefined,
+        source: "vector_store",
+      }));
+
+      return {
+        query,
+        results: vectorResults,
+        searchedFiles: null,
+        hasMore: vectorResults.length === maxResults,
+        usedVectorStore: true,
+      };
+    } else {
+      console.log(
+        "[search_semantic] using local search",
+        JSON.stringify({ query, searchRoot, maxResults }, null, 2),
+      );
     }
 
     const files = await walkWorkspaceFiles({
@@ -118,6 +190,7 @@ export const searchSemanticTool = tool({
       results: findings.slice(0, maxResults),
       searchedFiles: files.length,
       hasMore: findings.length > maxResults,
+      usedVectorStore: false,
     };
   },
 });
