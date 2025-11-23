@@ -10,6 +10,8 @@ import { searchVectorEmbeddingsTool } from "./search-vector-embeddings";
 import { searchSemanticTool } from "./search-semantic";
 import { cloneAndIndexRepositoryTool } from "./clone-and-index-repository";
 import { summarizeSnippetsTool } from "./summarize-snippets";
+import { generateRepoBriefTool } from "./generate-repo-brief";
+import { runCommandTool } from "./run-command";
 
 export const agentTools = {
   clone_and_index_repository: cloneAndIndexRepositoryTool,
@@ -22,6 +24,8 @@ export const agentTools = {
   index_repository_embeddings: indexRepositoryEmbeddingsTool,
   search_vector_embeddings: searchVectorEmbeddingsTool,
   summarize_snippets: summarizeSnippetsTool,
+  generate_repo_brief: generateRepoBriefTool,
+  run_command: runCommandTool,
 } satisfies ToolSet;
 
 export type AgentToolSet = typeof agentTools;
@@ -37,5 +41,7 @@ export {
   searchVectorEmbeddingsTool,
   searchSemanticTool,
   summarizeSnippetsTool,
+  generateRepoBriefTool,
+  runCommandTool,
 };
 

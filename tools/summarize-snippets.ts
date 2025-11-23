@@ -73,7 +73,7 @@ export const summarizeSnippetsTool = tool({
     const prompt = `${extraInstructions}Summarize the following code/document excerpts.\n${summaryStyle}\nIf there are open questions or missing context, explicitly list them.\n\n${promptSections}`;
 
     const result = await streamText({
-      model: openai("gpt-5.1-mini"),
+      model: openai("gpt-5.1"),
       system:
         "You are an engineering copilot summarizing repository context. Cite file paths explicitly and keep speculation to a minimum.",
       prompt,
